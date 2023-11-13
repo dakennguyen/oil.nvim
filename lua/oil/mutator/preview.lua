@@ -172,10 +172,10 @@ M.show = vim.schedule_wrap(function(actions, should_confirm, cb)
   end
   vim.keymap.set("n", "Y", function()
     confirm()
-  end, { buffer = bufnr })
+  end, { buffer = bufnr, nowait = true })
   vim.keymap.set("n", "y", function()
     confirm()
-  end, { buffer = bufnr })
+  end, { buffer = bufnr, nowait = true })
 end)
 
 return M
