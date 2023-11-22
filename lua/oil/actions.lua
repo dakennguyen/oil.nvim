@@ -229,7 +229,7 @@ M.refresh = {
 
 local function open_cmdline_with_path(path)
   local escaped =
-    vim.api.nvim_replace_termcodes(": " .. vim.fn.fnameescape(path) .. "<Home>", true, false, true)
+    vim.api.nvim_replace_termcodes(":! " .. "'" .. vim.fn.fnameescape(path) .."'" .. "<Home><Right>", true, false, true)
   vim.api.nvim_feedkeys(escaped, "n", false)
 end
 
