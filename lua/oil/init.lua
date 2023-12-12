@@ -7,7 +7,10 @@ local M = {}
 ---@field parsed_name nil|string
 
 ---@alias oil.EntryType "file"|"directory"|"socket"|"link"|"fifo"
----@alias oil.TextChunk string|string[]
+---@alias oil.HlRange { [1]: string, [2]: integer, [3]: integer } A tuple of highlight group name, col_start, col_end
+---@alias oil.HlTuple { [1]: string, [2]: string } A tuple of text, highlight group
+---@alias oil.HlRangeTuple { [1]: string, [2]: oil.HlRange[] } A tuple of text, internal highlights
+---@alias oil.TextChunk string|oil.HlTuple|oil.HlRangeTuple
 ---@alias oil.CrossAdapterAction "copy"|"move"
 
 ---@class (exact) oil.Adapter
@@ -456,20 +459,12 @@ M.select = function(opts, callback)
     return finish("Could not find adapter for current buffer")
   end
 
-  local mode = vim.api.nvim_get_mode().mode
-  local is_visual = mode:match("^[vV]")
+  local visual_range = util.get_visual_range()
 
   ---@type oil.Entry[]
   local entries = {}
-  if is_visual then
-    -- This is the best way to get the visual selection at the moment
-    -- https://github.com/neovim/neovim/pull/13896
-    local _, start_lnum, _, _ = unpack(vim.fn.getpos("v"))
-    local _, end_lnum, _, _, _ = unpack(vim.fn.getcurpos())
-    if start_lnum > end_lnum then
-      start_lnum, end_lnum = end_lnum, start_lnum
-    end
-    for i = start_lnum, end_lnum do
+  if visual_range then
+    for i = visual_range.start_lnum, visual_range.end_lnum do
       local entry = M.get_entry_on_line(0, i)
       if entry then
         table.insert(entries, entry)
@@ -1128,13 +1123,13 @@ M.setup = function(opts)
     group = aug,
     pattern = "*",
     callback = function(params)
+      if vim.g.SessionLoad ~= 1 then
+        return
+      end
       local util = require("oil.util")
-      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        local bufname = vim.api.nvim_buf_get_name(bufnr)
-        local scheme = util.parse_url(bufname)
-        if config.adapters[scheme] and vim.api.nvim_buf_line_count(bufnr) == 1 then
-          load_oil_buffer(bufnr)
-        end
+      local scheme = util.parse_url(params.file)
+      if config.adapters[scheme] and vim.api.nvim_buf_line_count(params.buf) == 1 then
+        load_oil_buffer(params.buf)
       end
     end,
   })
