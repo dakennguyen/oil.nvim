@@ -48,7 +48,7 @@ M.list = function(url, column_defs, cb)
   local _, path = util.parse_url(url)
   assert(path)
   local trash_dir = get_trash_dir()
-  ---@diagnostic disable-next-line: param-type-mismatch
+  ---@diagnostic disable-next-line: param-type-mismatch, discard-returns
   uv.fs_opendir(trash_dir, function(open_err, fd)
     if open_err then
       if open_err:match("^ENOENT: no such file or directory") then
@@ -204,14 +204,14 @@ M.delete_to_trash = function(path, cb)
   local basename = vim.fs.basename(path)
   local trash_dir = get_trash_dir()
   local dest = fs.join(trash_dir, basename)
-  uv.fs_stat(
+  uv.fs_lstat(
     path,
     vim.schedule_wrap(function(stat_err, src_stat)
       if stat_err then
         return cb(stat_err)
       end
       assert(src_stat)
-      if uv.fs_stat(dest) then
+      if uv.fs_lstat(dest) then
         local date_str = vim.fn.strftime(" %Y-%m-%dT%H:%M:%S")
         local name_pieces = vim.split(basename, ".", { plain = true })
         if #name_pieces > 1 then

@@ -205,19 +205,19 @@ end
 if has_devicons then
   M.register("icon", {
     render = function(entry, conf)
-      local type = entry[FIELD_TYPE]
+      local field_type = entry[FIELD_TYPE]
       local name = entry[FIELD_NAME]
       local meta = entry[FIELD_META]
-      if type == "link" and meta then
+      if field_type == "link" and meta then
         if meta.link then
           name = meta.link
         end
         if meta.link_stat then
-          type = meta.link_stat.type
+          field_type = meta.link_stat.type
         end
       end
       local icon, hl
-      if type == "directory" then
+      if field_type == "directory" then
         icon = conf and conf.directory or ""
         hl = "OilDirIcon"
       else
@@ -229,6 +229,13 @@ if has_devicons then
       end
       if not conf or conf.add_padding ~= false then
         icon = icon .. " "
+      end
+      if conf and conf.highlight then
+        if type(conf.highlight) == "function" then
+          hl = conf.highlight(icon)
+        else
+          hl = conf.highlight
+        end
       end
       return { icon, hl }
     end,
@@ -279,6 +286,10 @@ M.register("type", {
   end,
 })
 
+local function pad_number(int)
+  return string.format("%012d", int)
+end
+
 M.register("name", {
   render = function(entry, conf)
     error("Do not use the name column. It is for sorting only")
@@ -289,7 +300,11 @@ M.register("name", {
   end,
 
   get_sort_value = function(entry)
-    return entry[FIELD_NAME]
+    if config.view_options.natural_order then
+      return entry[FIELD_NAME]:gsub("%d+", pad_number)
+    else
+      return entry[FIELD_NAME]
+    end
   end,
 })
 

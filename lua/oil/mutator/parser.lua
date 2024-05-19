@@ -37,7 +37,7 @@ local FIELD_META = constants.FIELD_META
 ---@return string
 ---@return boolean
 local function parsedir(name)
-  local isdir = vim.endswith(name, "/")
+  local isdir = vim.endswith(name, "/") or (fs.is_windows and vim.endswith(name, "\\"))
   if isdir then
     name = name:sub(1, name:len() - 1)
   end
@@ -187,7 +187,7 @@ M.parse = function(bufnr)
       name = name:lower()
     end
     if seen_names[name] then
-      table.insert(errors, { message = "Duplicate filename", lnum = i - 1, col = 0 })
+      table.insert(errors, { message = "Duplicate filename", lnum = i - 1, end_lnum = i, col = 0 })
     else
       seen_names[name] = true
     end
@@ -200,6 +200,7 @@ M.parse = function(bufnr)
         table.insert(errors, {
           message = err,
           lnum = i - 1,
+          end_lnum = i,
           col = 0,
         })
         goto continue
@@ -209,22 +210,26 @@ M.parse = function(bufnr)
       end
       local parsed_entry = result.data
       local entry = result.entry
-      if not parsed_entry.name or parsed_entry.name:match("/") or not entry then
-        local message
-        if not parsed_entry.name then
-          message = "No filename found"
-        elseif not entry then
-          message = "Could not find existing entry (was the ID changed?)"
-        else
-          message = "Filename cannot contain '/'"
-        end
+
+      local err_message
+      if not parsed_entry.name then
+        err_message = "No filename found"
+      elseif not entry then
+        err_message = "Could not find existing entry (was the ID changed?)"
+      elseif parsed_entry.name:match("/") or parsed_entry.name:match(fs.sep) then
+        err_message = "Filename cannot contain path separator"
+      end
+      if err_message then
         table.insert(errors, {
-          message = message,
+          message = err_message,
           lnum = i - 1,
+          end_lnum = i,
           col = 0,
         })
         goto continue
       end
+      assert(entry)
+
       check_dupe(parsed_entry.name, i)
       local meta = entry[FIELD_META]
       if original_entries[parsed_entry.name] == parsed_entry.id then
@@ -273,6 +278,7 @@ M.parse = function(bufnr)
         table.insert(errors, {
           message = "Paths cannot start with '/'",
           lnum = i - 1,
+          end_lnum = i,
           col = 0,
         })
         goto continue

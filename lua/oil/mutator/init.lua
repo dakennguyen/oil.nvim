@@ -4,7 +4,8 @@ local cache = require("oil.cache")
 local columns = require("oil.columns")
 local config = require("oil.config")
 local constants = require("oil.constants")
-local lsp_helpers = require("oil.lsp_helpers")
+local fs = require("oil.fs")
+local lsp_helpers = require("oil.lsp.helpers")
 local oil = require("oil")
 local parser = require("oil.mutator.parser")
 local preview = require("oil.mutator.preview")
@@ -61,10 +62,25 @@ M.create_actions_from_diffs = function(all_diffs)
       return list
     end,
   })
+
+  -- To deduplicate create actions
+  -- This can happen when creating deep nested files e.g.
+  -- > foo/bar/a.txt
+  -- > foo/bar/b.txt
+  local seen_creates = {}
+
   ---@param action oil.Action
   local function add_action(action)
     local adapter = assert(config.get_adapter_by_scheme(action.dest_url or action.url))
     if not adapter.filter_action or adapter.filter_action(action) then
+      if action.type == "create" then
+        if seen_creates[action.url] then
+          return
+        else
+          seen_creates[action.url] = true
+        end
+      end
+
       table.insert(actions, action)
     end
   end
@@ -84,7 +100,8 @@ M.create_actions_from_diffs = function(all_diffs)
           table.insert(by_id, diff)
         else
           -- Parse nested files like foo/bar/baz
-          local pieces = vim.split(diff.name, "/")
+          local path_sep = fs.is_windows and "[/\\]" or "/"
+          local pieces = vim.split(diff.name, path_sep)
           local url = parent_url:gsub("/$", "")
           for i, v in ipairs(pieces) do
             local is_last = i == #pieces
@@ -364,21 +381,16 @@ M.enforce_action_order = function(actions)
   return ret
 end
 
+local progress
+
 ---@param actions oil.Action[]
 ---@param cb fun(err: nil|string)
 M.process_actions = function(actions, cb)
-  -- send all renames to LSP servers
-  local moves = {}
-  for _, action in ipairs(actions) do
-    if action.type == "move" then
-      local src_adapter = assert(config.get_adapter_by_scheme(action.src_url))
-      local dest_adapter = assert(config.get_adapter_by_scheme(action.dest_url))
-      if src_adapter.name == "files" and dest_adapter.name == "files" then
-        table.insert(moves, action)
-      end
-    end
-  end
-  lsp_helpers.will_rename_files(moves)
+  vim.api.nvim_exec_autocmds(
+    "User",
+    { pattern = "OilActionsPre", modeline = false, data = { actions = actions } }
+  )
+  local did_complete = lsp_helpers.will_perform_file_operations(actions)
 
   -- Convert some cross-adapter moves to a copy + delete
   for _, action in ipairs(actions) do
@@ -397,12 +409,17 @@ M.process_actions = function(actions, cb)
   end
 
   local finished = false
-  local progress = Progress.new()
-  local function finish(...)
+  progress = Progress.new()
+  local function finish(err)
     if not finished then
       finished = true
       progress:close()
-      cb(...)
+      progress = nil
+      vim.api.nvim_exec_autocmds(
+        "User",
+        { pattern = "OilActionsPost", modeline = false, data = { err = err, actions = actions } }
+      )
+      cb(err)
     end
   end
 
@@ -426,6 +443,7 @@ M.process_actions = function(actions, cb)
       return
     end
     if idx > #actions then
+      did_complete()
       finish()
       return
     end
@@ -457,7 +475,18 @@ M.process_actions = function(actions, cb)
   next_action()
 end
 
+M.show_progress = function()
+  if progress then
+    progress:restore()
+  end
+end
+
 local mutation_in_progress = false
+
+---@return boolean
+M.is_mutating = function()
+  return mutation_in_progress
+end
 
 ---@param confirm nil|boolean
 ---@param cb? fun(err: nil|string)
@@ -473,6 +502,7 @@ M.try_write_changes = function(confirm, cb)
   local was_modified = vim.bo.modified
   local buffers = view.get_all_buffers()
   local all_diffs = {}
+  ---@type table<integer, oil.ParseError[]>
   local all_errors = {}
 
   mutation_in_progress = true
