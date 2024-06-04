@@ -255,7 +255,12 @@ set_sort({sort})                                                    *oil.set_sor
     Change the sort order for oil
 
     Parameters:
-      {sort} `string[]` []
+      {sort} `oil.SortSpec[]` List of columns plus direction. See :help oil-
+             columns to see which ones are sortable.
+
+    Examples: >lua
+      require("oil").set_sort({ { "type", "asc" }, { "size", "desc" } })
+<
 
 set_is_hidden_file({is_hidden_file})                      *oil.set_is_hidden_file*
     Change how oil determines if the file is hidden
@@ -311,14 +316,14 @@ select({opts}, {callback})                                            *oil.selec
     Select the entry under the cursor
 
     Parameters:
-      {opts}     `nil|table`
-          {vertical}   `boolean` Open the buffer in a vertical split
-          {horizontal} `boolean` Open the buffer in a horizontal split
-          {split}      `"aboveleft"|"belowright"|"topleft"|"botright"` Split
+      {opts}     `nil|oil.SelectOpts`
+          {vertical}   `nil|boolean` Open the buffer in a vertical split
+          {horizontal} `nil|boolean` Open the buffer in a horizontal split
+          {split}      `nil|"aboveleft"|"belowright"|"topleft"|"botright"` Split
                        modifier
-          {tab}        `boolean` Open the buffer in a new tab
-          {close}      `boolean` Close the original oil buffer once selection is
-                       made
+          {tab}        `nil|boolean` Open the buffer in a new tab
+          {close}      `nil|boolean` Close the original oil buffer once
+                       selection is made
       {callback} `nil|fun(err: nil|string)` Called once all entries have been
                  opened
 
@@ -338,7 +343,7 @@ setup({opts})                                                          *oil.setu
     Initialize oil
 
     Parameters:
-      {opts} `nil|table`
+      {opts} `oil.setupOpts|nil`
 
 --------------------------------------------------------------------------------
 COLUMNS                                                              *oil-columns*
@@ -450,6 +455,9 @@ change_sort                                                  *actions.change_sor
 
 close                                                              *actions.close*
     Close oil and restore original buffer
+
+copy_entry_filename                                  *actions.copy_entry_filename*
+    Yank the filename of the entry under the cursor to a register
 
 copy_entry_path                                          *actions.copy_entry_path*
     Yank the filepath of the entry under the cursor to a register

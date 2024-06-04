@@ -19,6 +19,7 @@ local M = {}
 ---@field list fun(path: string, column_defs: string[], cb: fun(err?: string, entries?: oil.InternalEntry[], fetch_more?: fun())) Async function to list a directory.
 ---@field is_modifiable fun(bufnr: integer): boolean Return true if this directory is modifiable (allows for directories with read-only permissions).
 ---@field get_column fun(name: string): nil|oil.ColumnDefinition If the adapter has any adapter-specific columns, return them when fetched by name.
+---@field get_parent? fun(bufname: string): string Get the parent url of the given buffer
 ---@field normalize_url fun(url: string, callback: fun(url: string)) Before oil opens a url it will be normalized. This allows for link following, path normalizing, and converting an oil file url to the actual path of a file.
 ---@field get_entry_path? fun(url: string, entry: oil.Entry, callback: fun(path: string)) Similar to normalize_url, but used when selecting an entry
 ---@field render_action? fun(action: oil.Action): string Render a mutation action for display in the preview window. Only needed if adapter is modifiable.
@@ -28,10 +29,6 @@ local M = {}
 ---@field supported_cross_adapter_actions? table<string, oil.CrossAdapterAction> Mapping of adapter name to enum for all other adapters that can be used as a src or dest for move/copy actions.
 ---@field filter_action? fun(action: oil.Action): boolean When present, filter out actions as they are created
 ---@field filter_error? fun(action: oil.ParseError): boolean When present, filter out errors from parsing a buffer
-
--- TODO remove after https://github.com/folke/neodev.nvim/pull/163 lands
----@diagnostic disable: undefined-field
----@diagnostic disable: inject-field
 
 ---Get the entry on a specific line (1-indexed)
 ---@param bufnr integer
@@ -124,7 +121,9 @@ M.set_columns = function(cols)
 end
 
 ---Change the sort order for oil
----@param sort string[][]
+---@param sort oil.SortSpec[] List of columns plus direction. See :help oil-columns to see which ones are sortable.
+---@example
+--- require("oil").set_sort({ { "type", "asc" }, { "size", "desc" } })
 M.set_sort = function(sort)
   require("oil.view").set_sort(sort)
 end
@@ -539,13 +538,15 @@ M.open_preview = function(opts, callback)
   end)
 end
 
+---@class (exact) oil.SelectOpts
+---@field vertical? boolean Open the buffer in a vertical split
+---@field horizontal? boolean Open the buffer in a horizontal split
+---@field split? "aboveleft"|"belowright"|"topleft"|"botright" Split modifier
+---@field tab? boolean Open the buffer in a new tab
+---@field close? boolean Close the original oil buffer once selection is made
+
 ---Select the entry under the cursor
----@param opts nil|table
----    vertical boolean Open the buffer in a vertical split
----    horizontal boolean Open the buffer in a horizontal split
----    split "aboveleft"|"belowright"|"topleft"|"botright" Split modifier
----    tab boolean Open the buffer in a new tab
----    close boolean Close the original oil buffer once selection is made
+---@param opts nil|oil.SelectOpts
 ---@param callback nil|fun(err: nil|string) Called once all entries have been opened
 M.select = function(opts, callback)
   local cache = require("oil.cache")
@@ -986,7 +987,7 @@ end
 
 local _on_key_ns = 0
 ---Initialize oil
----@param opts nil|table
+---@param opts oil.setupOpts|nil
 M.setup = function(opts)
   local Ringbuf = require("oil.ringbuf")
   local config = require("oil.config")

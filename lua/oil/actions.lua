@@ -1,9 +1,6 @@
 local oil = require("oil")
 local util = require("oil.util")
 
--- TODO remove after https://github.com/folke/neodev.nvim/pull/163 lands
----@diagnostic disable: inject-field
-
 local M = {}
 
 M.show_help = {
@@ -268,6 +265,17 @@ M.copy_entry_path = {
       return
     end
     vim.fn.setreg(vim.v.register, dir .. entry.name)
+  end,
+}
+
+M.copy_entry_filename = {
+  desc = "Yank the filename of the entry under the cursor to a register",
+  callback = function()
+    local entry = oil.get_cursor_entry()
+    if not entry then
+      return
+    end
+    vim.fn.setreg(vim.v.register, entry.name)
   end,
 }
 
