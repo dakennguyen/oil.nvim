@@ -11,6 +11,7 @@ https://user-images.githubusercontent.com/506791/209727111-6b4a11f4-634a-4efa-94
 - [Quick start](#quick-start)
 - [Options](#options)
 - [Adapters](#adapters)
+- [Recipes](#recipes)
 - [API](#api)
 - [FAQ](#faq)
 
@@ -184,16 +185,16 @@ require("oil").setup({
   keymaps = {
     ["g?"] = "actions.show_help",
     ["<CR>"] = "actions.select",
-    ["<C-s>"] = "actions.select_vsplit",
-    ["<C-h>"] = "actions.select_split",
-    ["<C-t>"] = "actions.select_tab",
+    ["<C-s>"] = { "actions.select", opts = { vertical = true }, desc = "Open the entry in a vertical split" },
+    ["<C-h>"] = { "actions.select", opts = { horizontal = true }, desc = "Open the entry in a horizontal split" },
+    ["<C-t>"] = { "actions.select", opts = { tab = true }, desc = "Open the entry in new tab" },
     ["<C-p>"] = "actions.preview",
     ["<C-c>"] = "actions.close",
     ["<C-l>"] = "actions.refresh",
     ["-"] = "actions.parent",
     ["_"] = "actions.open_cwd",
     ["`"] = "actions.cd",
-    ["~"] = "actions.tcd",
+    ["~"] = { "actions.cd", opts = { scope = "tab" }, desc = ":tcd to the current oil directory" },
     ["gs"] = "actions.change_sort",
     ["gx"] = "actions.open_external",
     ["g."] = "actions.toggle_hidden",
@@ -320,6 +321,11 @@ nvim oil-ssh://[username@]hostname[:port]/[path]
 This may look familiar. In fact, this is the same url format that netrw uses.
 
 Note that at the moment the ssh adapter does not support Windows machines, and it requires the server to have a `/bin/sh` binary as well as standard unix commands (`ls`, `rm`, `mv`, `mkdir`, `chmod`, `cp`, `touch`, `ln`, `echo`).
+
+## Recipes
+
+- [Toggle file detail view](doc/recipes.md#toggle-file-detail-view)
+- [Hide gitignored files](doc/recipes.md#hide-gitignored-files)
 
 ## API
 
