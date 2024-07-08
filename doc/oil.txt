@@ -65,7 +65,7 @@ CONFIG                                                                *oil-confi
       -- Set to `false` to disable, or "name" to keep it on the file names
       constrain_cursor = "editable",
       -- Set to true to watch the filesystem for changes and reload oil
-      experimental_watch_for_changes = false,
+      watch_for_changes = false,
       -- Keymaps in oil buffer. Can be any value that `vim.keymap.set` accepts OR a table of keymap
       -- options with a `callback` (e.g. { callback = function() ... end, desc = "", mode = "n" })
       -- Additionally, if it is a string that matches "actions.<name>",
@@ -106,6 +106,8 @@ CONFIG                                                                *oil-confi
         -- Sort file names in a more intuitive order for humans. Is less performant,
         -- so you may want to set to false if you work with large directories.
         natural_order = true,
+        -- Sort file and directory names case insensitive
+        case_insensitive = false,
         sort = {
           -- sort order can be "asc" or "desc"
           -- see :help oil-columns to see which columns are sortable
@@ -275,9 +277,11 @@ toggle_hidden()                                                *oil.toggle_hidde
     Toggle hidden files and directories
 
 
-get_current_dir(): nil|string                                *oil.get_current_dir*
+get_current_dir({bufnr}): nil|string                         *oil.get_current_dir*
     Get the current directory
 
+    Parameters:
+      {bufnr} `nil|integer`
 
 open_float({dir})                                                 *oil.open_float*
     Open oil browser in a floating window

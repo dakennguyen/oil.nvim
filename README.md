@@ -20,7 +20,9 @@ https://user-images.githubusercontent.com/506791/209727111-6b4a11f4-634a-4efa-94
 ## Requirements
 
 - Neovim 0.8+
-- (optional) [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons) for file icons
+- Icon provider plugin (optional)
+  - [mini.icons](https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-icons.md) for file and folder icons
+  - [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons) for file icons
 
 ## Installation
 
@@ -34,7 +36,8 @@ oil.nvim supports all the usual plugin managers
   'stevearc/oil.nvim',
   opts = {},
   -- Optional dependencies
-  dependencies = { "nvim-tree/nvim-web-devicons" },
+  dependencies = { "echasnovski/mini.icons" },
+  -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if prefer nvim-web-devicons
 }
 ```
 
@@ -175,7 +178,7 @@ require("oil").setup({
   -- Set to `false` to disable, or "name" to keep it on the file names
   constrain_cursor = "editable",
   -- Set to true to watch the filesystem for changes and reload oil
-  experimental_watch_for_changes = false,
+  watch_for_changes = false,
   -- Keymaps in oil buffer. Can be any value that `vim.keymap.set` accepts OR a table of keymap
   -- options with a `callback` (e.g. { callback = function() ... end, desc = "", mode = "n" })
   -- Additionally, if it is a string that matches "actions.<name>",
@@ -216,6 +219,8 @@ require("oil").setup({
     -- Sort file names in a more intuitive order for humans. Is less performant,
     -- so you may want to set to false if you work with large directories.
     natural_order = true,
+    -- Sort file and directory names case insensitive
+    case_insensitive = false,
     sort = {
       -- sort order can be "asc" or "desc"
       -- see :help oil-columns to see which columns are sortable
@@ -340,7 +345,7 @@ Note that at the moment the ssh adapter does not support Windows machines, and i
 - [set_sort(sort)](doc/api.md#set_sortsort)
 - [set_is_hidden_file(is_hidden_file)](doc/api.md#set_is_hidden_fileis_hidden_file)
 - [toggle_hidden()](doc/api.md#toggle_hidden)
-- [get_current_dir()](doc/api.md#get_current_dir)
+- [get_current_dir(bufnr)](doc/api.md#get_current_dirbufnr)
 - [open_float(dir)](doc/api.md#open_floatdir)
 - [toggle_float(dir)](doc/api.md#toggle_floatdir)
 - [open(dir)](doc/api.md#opendir)
