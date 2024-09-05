@@ -22,7 +22,7 @@ local last_cursor_entry = {}
 ---@return boolean
 M.should_display = function(name, bufnr)
   return not config.view_options.is_always_hidden(name, bufnr)
-    and (not config.view_options.is_hidden_file(name, bufnr) or config.view_options.show_hidden)
+    and (config.view_options.show_hidden or not config.view_options.is_hidden_file(name, bufnr))
 end
 
 ---@param bufname string
@@ -79,7 +79,7 @@ M.toggle_hidden = function()
   end
 end
 
----@param is_hidden_file fun(filename: string, bufnr: nil|integer): boolean
+---@param is_hidden_file fun(filename: string, bufnr: integer): boolean
 M.set_is_hidden_file = function(is_hidden_file)
   local any_modified = are_any_modified()
   if any_modified then
@@ -333,7 +333,8 @@ M.initialize = function(bufnr)
   for k, v in pairs(config.buf_options) do
     vim.bo[bufnr][k] = v
   end
-  M.set_win_options()
+  vim.api.nvim_buf_call(bufnr, M.set_win_options)
+
   vim.api.nvim_create_autocmd("BufHidden", {
     desc = "Delete oil buffers when no longer in use",
     group = "Oil",
