@@ -267,8 +267,13 @@ require("oil").setup({
       return conf
     end,
   },
-  -- Configuration for the actions floating preview window
-  preview = {
+  -- Configuration for the file preview window
+  preview_win = {
+    -- Whether the preview window is automatically updated when the cursor is moved
+    update_on_cursor_moved = true,
+  },
+  -- Configuration for the floating action confirmation window
+  confirmation = {
     -- Width dimensions can be integers or a float between 0 and 1 (e.g. 0.4 for 40%)
     -- min_width and max_width can be a single value or a list of mixed integer/float types.
     -- max_width = {100, 0.8} means "the lesser of 100 columns or 80% of total"
@@ -289,8 +294,6 @@ require("oil").setup({
     win_options = {
       winblend = 0,
     },
-    -- Whether the preview window is automatically updated when the cursor is moved
-    update_on_cursor_moved = true,
   },
   -- Configuration for the floating progress window
   progress = {
@@ -357,7 +360,7 @@ Note that at the moment the ssh adapter does not support Windows machines, and i
 - [toggle_float(dir)](doc/api.md#toggle_floatdir)
 - [open(dir)](doc/api.md#opendir)
 - [close()](doc/api.md#close)
-- [open_preview(opts)](doc/api.md#open_previewopts)
+- [open_preview(opts, callback)](doc/api.md#open_previewopts-callback)
 - [select(opts, callback)](doc/api.md#selectopts-callback)
 - [save(opts, cb)](doc/api.md#saveopts-cb)
 - [setup(opts)](doc/api.md#setupopts)
